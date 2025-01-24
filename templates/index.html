@@ -5,45 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     <style>
+        :root {
+            --primary-blue: #1A3E6C;
+            --secondary-blue: #2C5F9E;
+            --light-blue: #4E8FD0;
+            --background-blue: #E6F2FF;
+            --accent-blue: #3A75B4;
+            --error-red: #D9534F;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
+            background-color: var(--background-blue);
+            color: var(--primary-blue);
+            line-height: 1.6;
         }
+
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 20px auto;
             padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
         }
-        h1 {
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: white;
             text-align: center;
+            padding: 30px 0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .history {
+
+        .header h1 {
+            font-size: 2.5em;
+        }
+
+        .upload-section {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .upload-section label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-section button {
+            background-color: var(--secondary-blue);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 15px;
+        }
+
+        .upload-section button:hover {
+            background-color: var(--accent-blue);
+        }
+
+        #result {
+            background-color: var(--background-blue);
+            padding: 20px;
+            border-radius: 10px;
             margin-top: 20px;
         }
-        table {
+
+        .history {
+            margin-top: 40px;
+        }
+
+        .history h2 {
+            text-align: center;
+        }
+
+        .history table {
             width: 100%;
             border-collapse: collapse;
         }
-        th, td {
+
+        .history th, .history td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
-        th {
-            background-color: #f4f4f4;
+
+        .history th {
+            background-color: var(--light-blue);
+        }
+
+        .error-message {
+            color: var(--error-red);
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Clove Leaf Disease Detection</h1>
-        <form id="uploadForm" enctype="multipart/form-data">
-            <label for="file">Upload Image:</label>
-            <input type="file" id="file" name="file" accept=".jpg, .jpeg, .png" required>
-            <button type="submit">Predict</button>
-        </form>
-        <div id="result"></div>
+        <div class="header">
+            <h1>Clove Leaf Disease Detection</h1>
+        </div>
+        
+        <div class="upload-section">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <label for="file">Upload Clove Leaf Image:</label>
+                <input type="file" id="file" name="file" accept=".jpg, .jpeg, .png" required>
+                <button type="button" id="uploadButton">Select Image</button> <!-- Change the type to button -->
+            </form>
+            <div id="result"></div>
+            <div id="errorMessage" class="error-message"></div>
+        </div>
+
         <div class="history">
             <h2>Prediction History</h2>
             <table>
@@ -66,7 +153,13 @@
             </table>
         </div>
     </div>
+
     <script>
+        // Trigger the hidden file input when the button is clicked
+        document.getElementById('uploadButton').addEventListener('click', function() {
+            document.getElementById('file').click();
+        });
+
         document.getElementById('uploadForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
@@ -82,14 +175,20 @@
 
                 const result = await response.json();
                 const resultDiv = document.getElementById('result');
+                const errorMessage = document.getElementById('errorMessage');
+                
                 if (response.ok) {
                     resultDiv.innerHTML = `<p><strong>Status:</strong> ${result.status}</p>
                                            <p><strong>Confidence:</strong> ${result.confidence.toFixed(2)}%</p>`;
+                    errorMessage.textContent = '';
                 } else {
-                    resultDiv.innerHTML = `<p style="color:red;">Error: ${result.error || 'Prediction failed.'}</p>`;
+                    resultDiv.innerHTML = '';
+                    errorMessage.textContent = `Error: ${result.error || 'Prediction failed.'}`;
                 }
             } catch (error) {
                 console.error('Error:', error);
+                document.getElementById('result').innerHTML = '';
+                document.getElementById('errorMessage').textContent = 'Error: Unable to process the image.';
             }
         });
     </script>
