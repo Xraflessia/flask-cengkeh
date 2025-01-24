@@ -11,12 +11,17 @@
             --light-blue: #4E8FD0;
             --background-blue: #E6F2FF;
             --accent-blue: #3A75B4;
+            --error-red: #D9534F;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
+            font-family: 'Arial', sans-serif;
             background-color: var(--background-blue);
             color: var(--primary-blue);
             line-height: 1.6;
@@ -34,27 +39,25 @@
             text-align: center;
             padding: 30px 0;
             border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .header h1 {
-            margin: 0;
             font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .main-content {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 30px;
-            margin-top: 30px;
         }
 
         .upload-section, .history-section {
             background-color: white;
             border-radius: 15px;
             padding: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .upload-box {
@@ -67,26 +70,11 @@
 
         .upload-box:hover {
             border-color: var(--accent-blue);
-            background-color: rgba(78, 143, 208, 0.1);
+            background-color: rgba(78,143,208,0.1);
         }
 
         #fileInput {
             display: none;
-        }
-
-        button {
-            background-color: var(--secondary-blue);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-top: 15px;
-        }
-
-        button:hover {
-            background-color: var(--accent-blue);
         }
 
         #preview {
@@ -97,6 +85,21 @@
             display: none;
         }
 
+        button {
+            background-color: var(--secondary-blue);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--accent-blue);
+        }
+
         .prediction-item {
             background-color: var(--background-blue);
             border-left: 5px solid var(--light-blue);
@@ -105,24 +108,21 @@
             border-radius: 5px;
         }
 
-        .instructions {
-            background-color: var(--background-blue);
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
         .error-message {
-            color: #D9534F;
+            color: var(--error-red);
             margin-top: 10px;
-            transition: opacity 0.3s ease, transform 0.3s ease;
             opacity: 0;
-            transform: translateY(-10px);
+            transition: opacity 0.3s;
         }
 
         .error-message.show {
             opacity: 1;
-            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -134,138 +134,163 @@
         
         <div class="main-content">
             <div class="upload-section">
-                <form id="uploadForm">
-                    <div class="upload-box" id="dropZone">
-                        <h3>Upload Clove Leaf Image</h3>
-                        <p>Drag & Drop or Click to Browse</p>
-                        <input type="file" id="fileInput" accept="image/*" />
-                        <button type="button" onclick="document.getElementById('fileInput').click()">Select Image</button>
-                        <div id="imagePreviewWrapper">
-                            <img id="preview" alt="Preview Image" />
-                        </div>
-                        <p id="errorMessage" class="error-message"></p>
-                        <button type="button" id="predictBtn" onclick="predictDisease()">Detect Leaf Disease</button>
-                    </div>
-                </form>
+                <div class="upload-box" id="dropZone">
+                    <h3>Upload Clove Leaf Image</h3>
+                    <p>Drag & Drop or Click to Browse</p>
+                    
+                    <input type="file" id="fileInput" accept="image/jpeg,image/png" />
+                    
+                    <button type="button" onclick="document.getElementById('fileInput').click()">
+                        Select Image
+                    </button>
+                    
+                    <img id="preview" alt="Image Preview" />
+                    
+                    <p id="errorMessage" class="error-message"></p>
+                    
+                    <button id="predictBtn" onclick="predictDisease()">
+                        Detect Leaf Disease
+                    </button>
+                </div>
 
                 <div class="instructions">
-                    <h3>Image Upload Guidelines</h3>
+                    <h3>Upload Guidelines</h3>
                     <ul>
-                        <li>Upload a clear, close-up image of a clove leaf</li>
-                        <li>Ensure good lighting and sharp focus</li>
-                        <li>Supported formats: JPG, PNG</li>
-                        <li>Maximum file size: 5MB</li>
+                        <li>Clear, close-up clove leaf image</li>
+                        <li>Good lighting and focus</li>
+                        <li>JPG or PNG formats</li>
+                        <li>Max 5MB file size</li>
                     </ul>
                 </div>
             </div>
 
             <div class="history-section">
                 <h2>Detection History</h2>
-                <div id="predictionHistory">
-                    <!-- Prediction history will be dynamically added here -->
-                </div>
+                <div id="predictionHistory"></div>
             </div>
         </div>
     </div>
 
     <script>
-        const BASE_URL = '{{ BASE_URL }}';
-        const fileInput = document.getElementById('fileInput');
-        const preview = document.getElementById('preview');
-        const errorMessage = document.getElementById('errorMessage');
-        const predictionHistory = document.getElementById('predictionHistory');
-        const predictBtn = document.getElementById('predictBtn');
+    const BASE_URL = 'YOUR_NGROK_URL_HERE';
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const errorMessage = document.getElementById('errorMessage');
+    const predictionHistory = document.getElementById('predictionHistory');
+    const predictBtn = document.getElementById('predictBtn');
 
-        fileInput.addEventListener('change', handleFiles);
+    fileInput.addEventListener('change', handleFileSelection);
+    fileInput.addEventListener('dragover', handleDragOver);
+    fileInput.addEventListener('drop', handleFileSelection);
 
-        function handleFiles() {
-            const file = fileInput.files[0];
+    function handleDragOver(event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 
-            if (!file.type.match('image.*')) {
-                showError('Please upload an image file');
-                return;
-            }
+    function handleFileSelection(event) {
+        event.preventDefault();
+        const file = event.dataTransfer ? event.dataTransfer.files[0] : fileInput.files[0];
 
-            if (file.size > 5 * 1024 * 1024) {
-                showError('File size should be less than 5MB');
-                return;
-            }
+        if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.style.display = 'block';
-                preview.src = e.target.result;
-                errorMessage.style.display = 'none';
-            }
-            reader.readAsDataURL(file);
+        if (!file.type.match('image.*')) {
+            showError('Please upload an image file');
+            return;
         }
 
-        function predictDisease() {
-            const file = fileInput.files[0];
-            if (!file) {
-                showError('Please select an image first');
-                return;
+        if (file.size > 5 * 1024 * 1024) {
+            showError('File size should be less than 5MB');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.style.display = 'block';
+            preview.src = e.target.result;
+            errorMessage.textContent = '';
+            errorMessage.classList.remove('show');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function predictDisease() {
+        const file = fileInput.files[0];
+        if (!file) {
+            showError('Please select an image first');
+            return;
+        }
+
+        predictBtn.disabled = true;
+        predictBtn.textContent = 'Processing...';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch(`${BASE_URL}/predict`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.error) {
+                showError(data.error);
+            } else {
+                displayPrediction(data.status, data.confidence);
             }
+        })
+        .catch(error => {
+            console.error('Detailed error:', error);
+            showError('Error detecting leaf disease');
+        })
+        .finally(() => {
+            predictBtn.disabled = false;
+            predictBtn.textContent = 'Detect Leaf Disease';
+        });
+    }
 
-            predictBtn.disabled = true;
-            predictBtn.textContent = 'Processing...';
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.add('show');
+    }
 
-            const formData = new FormData();
-            formData.append('file', file);
+    function displayPrediction(predictedClass, probability) {
+        const predictionItem = document.createElement('div');
+        predictionItem.className = 'prediction-item';
+        predictionItem.innerHTML = `
+            <h4>Disease Status: ${predictedClass}</h4>
+            <p>Confidence: ${probability.toFixed(2)}%</p>
+            <small>Detected: ${new Date().toLocaleString()}</small>
+        `;
+        predictionHistory.insertBefore(predictionItem, predictionHistory.firstChild);
+    }
 
-            fetch(`${BASE_URL}/predict`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    showError(data.error);
-                } else {
-                    displayPrediction(data.status, data.confidence);
-                }
-            })
-            .catch(error => {
-                showError('Error detecting leaf disease');
-                console.error(error);
-            })
-            .finally(() => {
-                predictBtn.disabled = false;
-                predictBtn.textContent = 'Detect Leaf Disease';
+    async function loadPredictionHistory() {
+        try {
+            const response = await fetch(`${BASE_URL}/history`);
+            const data = await response.json();
+            
+            data.forEach(item => {
+                const predictionItem = document.createElement('div');
+                predictionItem.className = 'prediction-item';
+                predictionItem.innerHTML = `
+                    <h4>Disease Status: ${item.status}</h4>
+                    <p>Confidence: ${item.confidence.toFixed(2)}%</p>
+                    <small>Detected: ${new Date(item.prediction_date).toLocaleString()}</small>
+                `;
+                predictionHistory.appendChild(predictionItem);
             });
+        } catch (error) {
+            console.error('Error fetching history:', error);
         }
+    }
 
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.classList.add('show');
-        }
-
-        function displayPrediction(predictedClass, probability) {
-            const div = document.createElement('div');
-            div.className = 'prediction-item';
-            div.innerHTML = `
-                <h4>Detected Disease: ${predictedClass}</h4>
-                <span>Confidence: ${probability.toFixed(2)}%</span>
-                <span>Timestamp: ${new Date().toLocaleString()}</span>
-            `;
-            predictionHistory.insertBefore(div, predictionHistory.firstChild);
-        }
-
-        fetch(`${BASE_URL}/history`)
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'prediction-item';
-                    div.innerHTML = `
-                        <h4>Detected Disease: ${item.status}</h4>
-                        <span>Confidence: ${item.confidence}%</span>
-                        <span>Timestamp: ${item.prediction_date}</span>
-                    `;
-                    predictionHistory.appendChild(div);
-                });
-            })
-            .catch(error => console.error('Error fetching history:', error));
+    // Load prediction history when page loads
+    loadPredictionHistory();
     </script>
 </body>
 </html>
