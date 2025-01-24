@@ -3,294 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clove Leaf Disease Detection</title>
+    <title>{{ title }}</title>
     <style>
-        :root {
-            --primary-blue: #1A3E6C;
-            --secondary-blue: #2C5F9E;
-            --light-blue: #4E8FD0;
-            --background-blue: #E6F2FF;
-            --accent-blue: #3A75B4;
-            --error-red: #D9534F;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: var(--background-blue);
-            color: var(--primary-blue);
-            line-height: 1.6;
+            font-family: Arial, sans-serif;
         }
-
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            max-width: 600px;
+            margin: 20px auto;
             padding: 20px;
-        }
-
-        .header {
-            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
-            color: white;
-            text-align: center;
-            padding: 30px 0;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-        }
-
-        .upload-section, .history-section {
-            background-color: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .upload-box {
-            border: 3px dashed var(--light-blue);
-            border-radius: 15px;
-            padding: 40px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .upload-box:hover {
-            border-color: var(--accent-blue);
-            background-color: rgba(78,143,208,0.1);
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        #preview {
-            max-width: 100%;
-            max-height: 300px;
-            margin-top: 20px;
-            border-radius: 10px;
-            display: none;
-        }
-
-        button {
-            background-color: var(--secondary-blue);
-            color: white;
-            border: none;
-            padding: 12px 24px;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: background-color 0.3s;
         }
-
-        button:hover {
-            background-color: var(--accent-blue);
+        h1 {
+            text-align: center;
         }
-
-        .prediction-item {
-            background-color: var(--background-blue);
-            border-left: 5px solid var(--light-blue);
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
+        .history {
+            margin-top: 20px;
         }
-
-        .error-message {
-            color: var(--error-red);
-            margin-top: 10px;
-            opacity: 0;
-            transition: opacity 0.3s;
+        table {
+            width: 100%;
+            border-collapse: collapse;
         }
-
-        .error-message.show {
-            opacity: 1;
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
         }
-
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
+        th {
+            background-color: #f4f4f4;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Clove Leaf Disease Detection</h1>
-        </div>
-        
-        <div class="main-content">
-            <div class="upload-section">
-                <div class="upload-box" id="dropZone">
-                    <h3>Upload Clove Leaf Image</h3>
-                    <p>Drag & Drop or Click to Browse</p>
-                    
-                    <input type="file" id="fileInput" accept="image/jpeg,image/png" />
-                    
-                    <button type="button" onclick="document.getElementById('fileInput').click()">
-                        Select Image
-                    </button>
-                    
-                    <img id="preview" alt="Image Preview" />
-                    
-                    <p id="errorMessage" class="error-message"></p>
-                    
-                    <button id="predictBtn" onclick="predictDisease()">
-                        Detect Leaf Disease
-                    </button>
-                </div>
-
-                <div class="instructions">
-                    <h3>Upload Guidelines</h3>
-                    <ul>
-                        <li>Clear, close-up clove leaf image</li>
-                        <li>Good lighting and focus</li>
-                        <li>JPG or PNG formats</li>
-                        <li>Max 5MB file size</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="history-section">
-                <h2>Detection History</h2>
-                <div id="predictionHistory"></div>
-            </div>
+        <h1>Clove Leaf Disease Detection</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <label for="file">Upload Image:</label>
+            <input type="file" id="file" name="file" accept=".jpg, .jpeg, .png" required>
+            <button type="submit">Predict</button>
+        </form>
+        <div id="result"></div>
+        <div class="history">
+            <h2>Prediction History</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Confidence</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prediction in predictions %}
+                    <tr>
+                        <td>{{ prediction.disease_type }}</td>
+                        <td>{{ prediction.confidence }}%</td>
+                        <td>{{ prediction.prediction_date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-
     <script>
-    const BASE_URL = 'YOUR_NGROK_URL_HERE';
-    const fileInput = document.getElementById('fileInput');
-    const preview = document.getElementById('preview');
-    const errorMessage = document.getElementById('errorMessage');
-    const predictionHistory = document.getElementById('predictionHistory');
-    const predictBtn = document.getElementById('predictBtn');
+        document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
 
-    fileInput.addEventListener('change', handleFileSelection);
-    fileInput.addEventListener('dragover', handleDragOver);
-    fileInput.addEventListener('drop', handleFileSelection);
+            const formData = new FormData();
+            const fileInput = document.getElementById('file');
+            formData.append('file', fileInput.files[0]);
 
-    function handleDragOver(event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
+            try {
+                const response = await fetch('{{ BASE_URL }}/predict', {
+                    method: 'POST',
+                    body: formData,
+                });
 
-    function handleFileSelection(event) {
-        event.preventDefault();
-        const file = event.dataTransfer ? event.dataTransfer.files[0] : fileInput.files[0];
-
-        if (!file) return;
-
-        if (!file.type.match('image.*')) {
-            showError('Please upload an image file');
-            return;
-        }
-
-        if (file.size > 5 * 1024 * 1024) {
-            showError('File size should be less than 5MB');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.style.display = 'block';
-            preview.src = e.target.result;
-            errorMessage.textContent = '';
-            errorMessage.classList.remove('show');
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function predictDisease() {
-        const file = fileInput.files[0];
-        if (!file) {
-            showError('Please select an image first');
-            return;
-        }
-
-        predictBtn.disabled = true;
-        predictBtn.textContent = 'Processing...';
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        fetch(`${BASE_URL}/predict`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            console.log('Response status:', response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log('Response data:', data);
-            if (data.error) {
-                showError(data.error);
-            } else {
-                displayPrediction(data.status, data.confidence);
+                const result = await response.json();
+                const resultDiv = document.getElementById('result');
+                if (response.ok) {
+                    resultDiv.innerHTML = `<p><strong>Status:</strong> ${result.status}</p>
+                                           <p><strong>Confidence:</strong> ${result.confidence.toFixed(2)}%</p>`;
+                } else {
+                    resultDiv.innerHTML = `<p style="color:red;">Error: ${result.error || 'Prediction failed.'}</p>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
             }
-        })
-        .catch(error => {
-            console.error('Detailed error:', error);
-            showError('Error detecting leaf disease');
-        })
-        .finally(() => {
-            predictBtn.disabled = false;
-            predictBtn.textContent = 'Detect Leaf Disease';
         });
-    }
-
-    function showError(message) {
-        errorMessage.textContent = message;
-        errorMessage.classList.add('show');
-    }
-
-    function displayPrediction(predictedClass, probability) {
-        const predictionItem = document.createElement('div');
-        predictionItem.className = 'prediction-item';
-        predictionItem.innerHTML = `
-            <h4>Disease Status: ${predictedClass}</h4>
-            <p>Confidence: ${probability.toFixed(2)}%</p>
-            <small>Detected: ${new Date().toLocaleString()}</small>
-        `;
-        predictionHistory.insertBefore(predictionItem, predictionHistory.firstChild);
-    }
-
-    async function loadPredictionHistory() {
-        try {
-            const response = await fetch(`${BASE_URL}/history`);
-            const data = await response.json();
-            
-            data.forEach(item => {
-                const predictionItem = document.createElement('div');
-                predictionItem.className = 'prediction-item';
-                predictionItem.innerHTML = `
-                    <h4>Disease Status: ${item.status}</h4>
-                    <p>Confidence: ${item.confidence.toFixed(2)}%</p>
-                    <small>Detected: ${new Date(item.prediction_date).toLocaleString()}</small>
-                `;
-                predictionHistory.appendChild(predictionItem);
-            });
-        } catch (error) {
-            console.error('Error fetching history:', error);
-        }
-    }
-
-    // Load prediction history when page loads
-    loadPredictionHistory();
     </script>
 </body>
 </html>
